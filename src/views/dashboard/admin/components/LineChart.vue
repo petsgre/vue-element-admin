@@ -1,5 +1,5 @@
 <template>
-  <div :class="className" :style="{height:height,width:width}"/>
+  <div :class="className" :style="{height:height,width:width}" />
 </template>
 
 <script>
@@ -32,7 +32,8 @@ export default {
   },
   data() {
     return {
-      chart: null
+      chart: null,
+      sidebarElm: null
     }
   },
   watch: {
@@ -46,33 +47,37 @@ export default {
   mounted() {
     this.initChart()
     if (this.autoResize) {
-      this.__resizeHanlder = debounce(() => {
+      this.__resizeHandler = debounce(() => {
         if (this.chart) {
           this.chart.resize()
         }
       }, 100)
-      window.addEventListener('resize', this.__resizeHanlder)
+      window.addEventListener('resize', this.__resizeHandler)
     }
 
     // 监听侧边栏的变化
-    const sidebarElm = document.getElementsByClassName('sidebar-container')[0]
-    sidebarElm.addEventListener('transitionend', this.__resizeHanlder)
+    this.sidebarElm = document.getElementsByClassName('sidebar-container')[0]
+    this.sidebarElm && this.sidebarElm.addEventListener('transitionend', this.sidebarResizeHandler)
   },
   beforeDestroy() {
     if (!this.chart) {
       return
     }
     if (this.autoResize) {
-      window.removeEventListener('resize', this.__resizeHanlder)
+      window.removeEventListener('resize', this.__resizeHandler)
     }
 
-    const sidebarElm = document.getElementsByClassName('sidebar-container')[0]
-    sidebarElm.removeEventListener('transitionend', this.__resizeHanlder)
+    this.sidebarElm && this.sidebarElm.removeEventListener('transitionend', this.sidebarResizeHandler)
 
     this.chart.dispose()
     this.chart = null
   },
   methods: {
+    sidebarResizeHandler(e) {
+      if (e.propertyName === 'width') {
+        this.__resizeHandler()
+      }
+    },
     setOptions({ expectedData, actualData } = {}) {
       this.chart.setOption({
         xAxis: {

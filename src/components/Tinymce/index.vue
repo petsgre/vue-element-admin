@@ -1,14 +1,14 @@
 <template>
-  <div :class="{fullscreen:fullscreen}" class="tinymce-container editor-container">
-    <textarea :id="tinymceId" class="tinymce-textarea"/>
+  <div :class="{fullscreen:fullscreen}" class="tinymce-container" :style="{width:containerWidth}">
+    <textarea :id="tinymceId" class="tinymce-textarea" />
     <div class="editor-custom-btn-container">
-      <editorImage color="#1890ff" class="editor-upload-btn" @successCBK="imageSuccessCBK"/>
+      <editorImage color="#1890ff" class="editor-upload-btn" @successCBK="imageSuccessCBK" />
     </div>
   </div>
 </template>
 
 <script>
-import editorImage from './components/editorImage'
+import editorImage from './components/EditorImage'
 import plugins from './plugins'
 import toolbar from './toolbar'
 
@@ -18,7 +18,9 @@ export default {
   props: {
     id: {
       type: String,
-      default: 'vue-tinymce-' + +new Date()
+      default: function() {
+        return 'vue-tinymce-' + +new Date() + ((Math.random() * 1000).toFixed(0) + '')
+      }
     },
     value: {
       type: String,
@@ -36,9 +38,14 @@ export default {
       default: 'file edit insert view format table'
     },
     height: {
-      type: Number,
+      type: [Number, String],
       required: false,
       default: 360
+    },
+    width: {
+      type: [Number, String],
+      required: false,
+      default: 'auto'
     }
   },
   data() {
@@ -56,6 +63,13 @@ export default {
   computed: {
     language() {
       return this.languageTypeList[this.$store.getters.language]
+    },
+    containerWidth() {
+      const width = this.width
+      if (/^[\d]+(\.[\d]+)?$/.test(width)) { // matches `100`, `'100'`
+        return `${width}px`
+      }
+      return width
     }
   },
   watch: {
@@ -155,8 +169,13 @@ export default {
       })
     },
     destroyTinymce() {
-      if (window.tinymce.get(this.tinymceId)) {
-        window.tinymce.get(this.tinymceId).destroy()
+      const tinymce = window.tinymce.get(this.tinymceId)
+      if (this.fullscreen) {
+        tinymce.execCommand('mceFullScreen')
+      }
+
+      if (tinymce) {
+        tinymce.destroy()
       }
     },
     setContent(value) {
@@ -178,6 +197,7 @@ export default {
 <style scoped>
 .tinymce-container {
   position: relative;
+  line-height: normal;
 }
 .tinymce-container>>>.mce-fullscreen {
   z-index: 10000;
